@@ -94,7 +94,6 @@ lemma Game.birthday_lt_right (g : Game) (r : Game) (h : r ∈ g.rightMoves) :
       apply elt_leq_max b r.birthday h_mem_b
     linarith
 
-
 def Game.le (g h : Game) : Prop :=
     (∀ g_l ∈ g.leftMoves, ¬(Game.le h g_l)) ∧ (∀ h_r ∈ h.rightMoves, ¬(Game.le h_r g))
 termination_by (Game.birthday g + Game.birthday h)
@@ -110,11 +109,25 @@ decreasing_by
     apply add_lt_add_left
     exact Game.birthday_lt_right h h_r xr
 
+def Game.isSurreal (g : Game) : Prop :=
+  ∀ g_l ∈ g.leftMoves, ∀ g_r ∈ g.rightMoves, ¬(Game.le g_r g_l)
+
+
+theorem zero_surreal : Game.isSurreal zero := by
+  intro g_l h_l g_r h_r
+  cases h_l
+
+theorem one_surreal : Game.isSurreal one  := by
+  intro g_l h_l g_r h_r
+  cases h_r
+
+theorem two_surreal : Game.isSurreal two  := by
+  intro g_l h_l g_r h_r
+  cases h_r
 
 theorem zero_leq_zero : Game.le zero zero := by
       unfold Game.le
       constructor <;> (intro g h; cases h)
-
 
 theorem zero_leq_one : Game.le zero one := by
   unfold Game.le
@@ -124,6 +137,22 @@ theorem zero_leq_one : Game.le zero one := by
   · intro o_r one_right
     cases one_right
 
+theorem one_not_leq_zero : ¬(Game.le one zero) := by
+  intro h_le
+  unfold Game.le at h_le
+  let h_not_le_zero_zero := h_le.1 zero (by simp [one, Game.leftMoves])
+  exact h_not_le_zero_zero zero_leq_zero
+
+
+theorem half_surreal : Game.isSurreal half := by
+  intro g_l h_l g_r h_r
+  simp only [half, Game.leftMoves, List.mem_singleton] at h_l
+  subst h_l
+  simp only [half, Game.rightMoves, List.mem_singleton] at h_r
+  subst h_r
+  exact one_not_leq_zero
+
+
 
 theorem half_leq_one : Game.le half one := by
   unfold Game.le
@@ -132,10 +161,6 @@ theorem half_leq_one : Game.le half one := by
     -- The only left move of `half` is `zero`.
     simp only [half, Game.leftMoves, List.mem_singleton] at half_left
     subst half_left
-    intro h_le_one_zero
-    unfold Game.le at h_le_one_zero
-    let h_not_le_zero_zero := h_le_one_zero.1 zero (by simp [one, Game.leftMoves])
-    -- This gives us the contradiction.
-    exact h_not_le_zero_zero zero_leq_zero
+    exact one_not_leq_zero
   · intro o_r one_right
     cases one_right
